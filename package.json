@@ -1,0 +1,20 @@
+{
+  "name": "sense-data-getter",
+  "version": "1.0.0",
+  "description": "gets data from sense home monitor",
+  "main": "senseDataGetter.js",
+  "scripts": {
+    "test": "testme.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WallGauge-GaugeApps/senseDataGetter.git"
+  },
+  "author": "John Rucker",
+  "license": "MIT",
+  "homepage": "https://WallGauge.com",
+  "dependencies": {
+    "node-fetch": "^2.1.2",
+    "ws": "^5.2.0"
+  }
+}

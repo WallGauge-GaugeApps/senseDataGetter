@@ -27,7 +27,7 @@ sense.on('power', () => {
         ' | Home Load:' + sense.power.netWatts +
         ', Solar In: ' + sense.power.solarWatts +
         ', Grid In: ' + sense.power.gridWatts +
-        ' | ' + solarPowered + '% of the this week\'s was power was from renewable energy.');
+        ' | ' + solarPowered + '% of the this week\'s power was from renewable energy.');
     sense.closeWebSoc();
     setTimeout(() => {
         sense.openWebSocket();

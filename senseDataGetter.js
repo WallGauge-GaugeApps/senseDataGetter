@@ -5,6 +5,8 @@ const WS = require('ws');
 const apiURL = 'https://api.sense.com/apiservice/api/v1/';
 const wssURL = 'wss://clientrt.sense.com/monitors/';
 
+var webSoc = null;
+
 var powerObj = {
     solarWatts: null,
     gridWatts: 0,
@@ -18,7 +20,6 @@ class senseDataGetter extends EventEmitter {
         this.power = powerObj;
         this._userName = userName;
         this._userPass = userPass;
-        this._webSoc = null;
         this._authObj = {};
 
         this.authenticate();
@@ -42,9 +43,9 @@ class senseDataGetter extends EventEmitter {
     };
 
     closeWebSoc() {
-        if (this._webSoc != null) {
-            this._webSoc.close();
-            // this._webSoc = null;
+        if (webSoc != null) {
+            webSoc.close();
+            webSoc = null;
         } else {
             console.log("WebSocket not open! Can't close!")
         }
@@ -52,21 +53,21 @@ class senseDataGetter extends EventEmitter {
 
     openWebSocket() {
         let wsURL = wssURL + this._authObj.monitors[0].id + '/realtimefeed?access_token=' + this._authObj.access_token;
-        this._webSoc = new WS(wsURL);
+        webSoc = new WS(wsURL);
 
-        this._webSoc.on('open', () => {
+        webSoc.on('open', () => {
             if (this.verbose) console.log('Web Socket to Sene.com is open.');
             this.emit('wsStatus', 'open');
         });
-        this._webSoc.on('close', () => {
+        webSoc.on('close', () => {
             if (this.verbose) console.log('Web Socket to Sene.com is closed.');
             this.emit('wsStatus', 'close');
         });
-        this._webSoc.on('error', (err) => {
+        webSoc.on('error', (err) => {
             console.error('Web Socket Error ' + err);
             this.emit('wsStatus', 'error', err);
         });
-        this._webSoc.on('message', (data) => {
+        webSoc.on('message', (data) => {
             let dObj = {};
             dObj = JSON.parse(data);
             if (this.listenerCount('wsData') == 0 && this.verbose) {

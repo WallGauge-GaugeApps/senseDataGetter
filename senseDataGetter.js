@@ -44,7 +44,7 @@ class senseDataGetter extends EventEmitter {
     closeWebSoc() {
         if (this._webSoc != null) {
             this._webSoc.close();
-            this._webSoc = null;
+            // this._webSoc = null;
         } else {
             console.log("WebSocket not open! Can't close!")
         }

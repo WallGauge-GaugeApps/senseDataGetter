@@ -20,6 +20,13 @@ sense.on('authenticated', () => {
             console.log('Update. This week ' + solarPowered + '% of the power was from renewable energy.');
         })
     },10*60*1000)
+
+    setInterval(()=>{
+        console.log('Reconnecting to sense.com...')
+        sense.closeWebSoc();
+        sense.authenticate();
+        sense.openWebSocket();
+    },2*60*1000)
 })
 
 sense.on('power', () => {

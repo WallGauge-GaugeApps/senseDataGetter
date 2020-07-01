@@ -5,7 +5,7 @@ const WS = require('ws');
 const apiURL = 'https://api.sense.com/apiservice/api/v1/';
 const wssURL = 'wss://clientrt.sense.com/monitors/';
 
-var webSoc = null;
+var webSoc = new WS();;
 
 var powerObj = {
     solarWatts: null,
@@ -44,8 +44,9 @@ class senseDataGetter extends EventEmitter {
 
     closeWebSoc() {
         if (webSoc != null) {
-            webSoc.close();
-            webSoc = null;
+            // webSoc.close();
+            webSoc.terminate();
+            // webSoc = null;
         } else {
             console.log("WebSocket not open! Can't close!")
         }

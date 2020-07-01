@@ -5,7 +5,7 @@ const WS = require('ws');
 const apiURL = 'https://api.sense.com/apiservice/api/v1/';
 const wssURL = 'wss://clientrt.sense.com/monitors/';
 
-var webSoc = new WS();;
+var webSoc = null;
 
 var powerObj = {
     solarWatts: null,

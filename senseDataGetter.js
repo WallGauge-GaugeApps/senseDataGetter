@@ -53,6 +53,7 @@ class senseDataGetter extends EventEmitter {
     };
 
     openWebSocket() {
+        this.closeWebSoc();
         let wsURL = wssURL + this._authObj.monitors[0].id + '/realtimefeed?access_token=' + this._authObj.access_token;
         webSoc = new WS(wsURL);
 

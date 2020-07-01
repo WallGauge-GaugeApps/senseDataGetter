@@ -26,7 +26,7 @@ sense.on('authenticated', () => {
         sense.closeWebSoc();
         sense.authenticate();
         sense.openWebSocket();
-    },1.5*60*1000)
+    },61*60*1000)
 })
 
 sense.on('power', () => {

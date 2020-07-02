@@ -3,7 +3,7 @@ const actObj = require('./actObj.json');
 
 var solarPowered = null;
 var reconnectCont = 0
-const reconnet = 6
+const reconnet = 2
 
 
 const sense = new Sense(actObj.email, actObj.password, false);
@@ -26,7 +26,7 @@ setInterval(() => {
         sense.authenticate();
         sense.openWebSocket();
     };
-}, 10 * 60 * 1000);
+}, 1 * 60 * 1000);
 
 sense.on('authenticated', () => {
     console.log('We are logged in and authenticated!')

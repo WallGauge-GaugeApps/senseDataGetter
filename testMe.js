@@ -3,32 +3,67 @@ const actObj = require('./actObj.json');
 
 var getpowerTimer = null;
 var solarPowered = null;
-var reconnectCont = 0
-const reconnet = 2
+var minCount = 0;
+const reconnectInterval = 4;    // in minutes  60
+const getTrendInterval = 2;     // in minutes  5
 
 
 const sense = new Sense(actObj.email, actObj.password, false);
 
+var nextReconnectInterval = reconnectInterval;
+var nextGetTrendInterval =getTrendInterval;
+
 setInterval(() => {
-    reconnectCont++
-    if (reconnectCont < reconnet) {
-        sense.getTrends('week')
-            .then((data) => {
-                solarPowered = data.solar_powered
-                console.log('Update. This week ' + solarPowered + '% of the power was from renewable energy.');
-            })
-            .catch((err)=>{
-                console.error('Error trying to getTrends from sense.com', err)
-            });
+    minCount++;
+    if (nextGetTrendInterval == minCount) {
+        nextGetTrendInterval += reconnectInterval;
+        getTrend();
+    } else if (nextReconnectInterval == minCount) {
+        nextReconnectInterval += getTrendInterval;
+        reconnectToSense();
     } else {
-        reconnectCont = 0;
-        console.log('-------- Reconnecting to sense.com ---------');
-        clearTimeout(getpowerTimer);
-        sense.closeWebSoc();
-        sense.authenticate();
         sense.openWebSocket();
-    };
-}, 1 * 60 * 1000);
+    }
+}, 60000)
+
+function reconnectToSense() {
+    console.log('-------- Reconnecting to sense.com ---------');
+    sense.closeWebSoc();
+    sense.authenticate();
+    sense.openWebSocket();
+}
+
+function getTrend() {
+    sense.getTrends('week')
+        .then((data) => {
+            solarPowered = data.solar_powered
+            console.log('Update. This week ' + solarPowered + '% of the power was from renewable energy.');
+        })
+        .catch((err) => {
+            console.error('Error trying to getTrends from sense.com', err)
+        });
+}
+
+// setInterval(() => {
+//     minCount++
+//     if (minCount < reconnectInterval) {
+//         sense.getTrends('week')
+//             .then((data) => {
+//                 solarPowered = data.solar_powered
+//                 console.log('Update. This week ' + solarPowered + '% of the power was from renewable energy.');
+//             })
+//             .catch((err) => {
+//                 console.error('Error trying to getTrends from sense.com', err)
+//             });
+//     } else {
+//         minCount = 0;
+//         console.log('-------- Reconnecting to sense.com ---------');
+//         clearTimeout(getpowerTimer);
+//         sense.closeWebSoc();
+//         sense.authenticate();
+//         sense.openWebSocket();
+//     };
+// }, 1 * 60 * 1000);
 
 sense.on('authenticated', () => {
     console.log('We are logged in and authenticated!')
@@ -39,8 +74,6 @@ sense.on('authenticated', () => {
             console.log('This week ' + solarPowered + '% of the power was from renewable energy.');
             sense.openWebSocket();
         })
-
-
 });
 
 sense.on('power', () => {
@@ -50,7 +83,4 @@ sense.on('power', () => {
         ', Grid In: ' + sense.power.gridWatts +
         ' | ' + solarPowered + '% of the this week\'s power was from renewable energy.');
     sense.closeWebSoc();
-    getpowerTimer = setTimeout(() => {
-        sense.openWebSocket();
-    }, 60000);
 });

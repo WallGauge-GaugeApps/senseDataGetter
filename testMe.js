@@ -4,9 +4,8 @@ const actObj = require('./actObj.json');
 var firstRun = true;
 var solarPowered = null;
 var minCount = 0;
-const reconnectInterval = 4;    // in minutes  60
-const getTrendInterval = 2;     // in minutes  5
-
+const reconnectInterval = 60;    // in minutes  60
+const getTrendInterval = 10;     // in minutes  10
 
 const sense = new Sense(actObj.email, actObj.password, false);
 

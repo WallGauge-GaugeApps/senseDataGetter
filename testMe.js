@@ -1,6 +1,7 @@
 const Sense = require('./senseDataGetter');
 const actObj = require('./actObj.json');
 
+var getpowerTimer = null;
 var solarPowered = null;
 var reconnectCont = 0
 const reconnet = 2
@@ -22,6 +23,7 @@ setInterval(() => {
     } else {
         reconnectCont = 0;
         console.log('-------- Reconnecting to sense.com ---------');
+        clearTimeout(getpowerTimer);
         sense.closeWebSoc();
         sense.authenticate();
         sense.openWebSocket();
@@ -48,7 +50,7 @@ sense.on('power', () => {
         ', Grid In: ' + sense.power.gridWatts +
         ' | ' + solarPowered + '% of the this week\'s power was from renewable energy.');
     sense.closeWebSoc();
-    setTimeout(() => {
+    getpowerTimer = setTimeout(() => {
         sense.openWebSocket();
     }, 60000);
 });

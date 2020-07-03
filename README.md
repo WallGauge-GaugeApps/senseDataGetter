@@ -28,7 +28,7 @@ Now to give the testMe app your Sense.com login information create an actObj.jso
 
 * type `node testMe.js` to test the senseDataGetter class
 
-## Raspberry Pi workaround for wrong SSL signature type
+## Raspberry Pi workaround for SSL signature type
 
 If you are running this on a Raspberry Pi and your kernel is v4.19.118 and Distro is buster or newer you will get a web socket error saying you are using the wrong SSL signature type.  This is because the sense API uses a default SSL security level of 1 and buster’s default is set to 2.  You can change this by creating a file to override this SSL setting.  I recommend only doing this at the account level don’t change it for all apps on your Pi.  
 

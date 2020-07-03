@@ -4,9 +4,9 @@ const WS = require('ws');
 
 const apiURL = 'https://api.sense.com/apiservice/api/v1/';
 const wssURL = 'wss://clientrt.sense.com/monitors/';
+const logPrefix = 'senseDataGetter.js | ';
 
 var webSoc = null;
-
 var powerObj = {
     solarWatts: null,
     gridWatts: 0,
@@ -14,6 +14,22 @@ var powerObj = {
 };
 
 class senseDataGetter extends EventEmitter {
+    /**
+     * This class provides an interface to the sense.com cloud data.  See the Readme for more information.
+     * Construct this class with your sense.com user ID and Password.  
+     * Then listen for the authenticated event before calling any class methods.
+     * emits:
+     *   emit('authenticated')
+     *   emit('wsStatus', 'open')
+     *   emit('wsStatus', 'close')
+     *   emit('wsStatus', 'error', err)
+     *   emit('power') - emitted when powerObj data has been recived and parsed
+     *   emit('wsData', dObj) - emitted when new data received. 
+     * 
+     * @param {string} userName 
+     * @param {string} userPass 
+     * @param {boolean} verboseLogging - optional defaults to false
+     */
     constructor(userName = '', userPass = '', verboseLogging = false) {
         super();
         this.verbose = verboseLogging;
@@ -21,20 +37,25 @@ class senseDataGetter extends EventEmitter {
         this._userName = userName;
         this._userPass = userPass;
         this._authObj = {};
-
         this.authenticate();
     };
 
+    /**
+     * Authenticates with sense.com based on user ID and Password passed to the class during construction.
+     * emits:
+     *  emit('authenticated')
+     * sets this._authObj for use in future api and web socket calls
+     */
     authenticate() {
         this._auth()
             .then(authObj => {
                 this._authObj = authObj;
                 if (!this._authObj.authorized) {
-                    console.error('Error user not authenticated!')
-                    throw Error('User not authenticated!')
+                    console.error('Error user not authenticated!');
+                    throw Error('User not authenticated!');
                 } else {
-                    if (this.verbose) console.log('User is Authorized. Emitting authenticated.');
-                    this.emit('authenticated')
+                    if (this.verbose) logit('User is Authorized. Emitting authenticated.');
+                    this.emit('authenticated');
                 };
             })
             .catch(err => {
@@ -42,27 +63,37 @@ class senseDataGetter extends EventEmitter {
             });
     };
 
+    /**
+     * Terminates web socket
+     */
     closeWebSoc() {
         if (webSoc != null) {
-            // webSoc.close();
             webSoc.terminate();
-            // webSoc = null;
         } else {
-            console.log("WebSocket not open! Can't close!")
-        }
+            logit("WebSocket not open! Can't close!");
+        };
     };
 
+    /**
+     * Opens a web socket to sense.com and listens for data
+     * emits
+     *   emit('wsStatus', 'open')
+     *   emit('wsStatus', 'close')
+     *   emit('wsStatus', 'error', err)
+     *   emit('power') - emitted when powerObj data has been recived and parsed
+     *   emit('wsData', dObj) - emitted when new data received. 
+     */
     openWebSocket() {
         this.closeWebSoc();
         let wsURL = wssURL + this._authObj.monitors[0].id + '/realtimefeed?access_token=' + this._authObj.access_token;
         webSoc = new WS(wsURL);
 
         webSoc.on('open', () => {
-            if (this.verbose) console.log('Web Socket to Sene.com is open.');
+            if (this.verbose) logit('Web Socket to Sene.com is open.');
             this.emit('wsStatus', 'open');
         });
         webSoc.on('close', () => {
-            if (this.verbose) console.log('Web Socket to Sene.com is closed.');
+            if (this.verbose) logit('Web Socket to Sene.com is closed.');
             this.emit('wsStatus', 'close');
         });
         webSoc.on('error', (err) => {
@@ -73,16 +104,16 @@ class senseDataGetter extends EventEmitter {
             let dObj = {};
             dObj = JSON.parse(data);
             if (this.listenerCount('wsData') == 0 && this.verbose) {
-                console.log('\n_______________________________________________________________________________________________________\n');
+                logit('\n_______________________________________________________________________________________________________\n');
                 console.dir(dObj, { depth: null });
             };
 
             if (dObj.payload.grid_w != undefined) {
-                this.power.solarWatts = dObj.payload.d_solar_w
-                this.power.gridWatts = dObj.payload.grid_w
-                this.power.netWatts = dObj.payload.d_w
+                this.power.solarWatts = dObj.payload.d_solar_w;
+                this.power.gridWatts = dObj.payload.grid_w;
+                this.power.netWatts = dObj.payload.d_w;
                 this.emit('power');
-            }
+            };
             this.emit('wsData', dObj);
         });
     };
@@ -96,9 +127,9 @@ class senseDataGetter extends EventEmitter {
     getTrends(scale = 'week', startDate = 'Date().toISOString()') {
         if (startDate == 'Date().toISOString()') {
             startDate = new Date().toISOString()
-            console.log('set default start date to ' + startDate)
+            logit('set default start date to ' + startDate)
         };
-        let uri = apiURL + 'app/history/trends?monitor_id=' + this._authObj.monitors[0].id + '&device_id=usage&scale=' + scale + '&start=' + startDate
+        let uri = apiURL + 'app/history/trends?monitor_id=' + this._authObj.monitors[0].id + '&device_id=usage&scale=' + scale + '&start=' + startDate;
         return new Promise((resolve, reject) => {
             let callObj = {
                 method: 'GET',
@@ -111,7 +142,7 @@ class senseDataGetter extends EventEmitter {
                 .then(res => res.json())
                 .then(json => {
                     if (this.verbose) {
-                        console.log('\n getTrends follows:');
+                        logit('\n getTrends follows:');
                         console.dir(json, { depth: null });
                     }
                     resolve(json);
@@ -124,11 +155,11 @@ class senseDataGetter extends EventEmitter {
     };
 
     /**
-     * Gets a list of discovered devices and returns them in a JSON object
+     * Gets a list of discovered devices and returns data as a JSON object
      * @returns {Promise} Promise argument will be a JSON object with call results
      */
     getDevices() {
-        let uri = apiURL + 'app/monitors/' + this._authObj.monitors[0].id + '/devices'
+        let uri = apiURL + 'app/monitors/' + this._authObj.monitors[0].id + '/devices';
         return new Promise((resolve, reject) => {
             let callObj = {
                 method: 'GET',
@@ -141,7 +172,7 @@ class senseDataGetter extends EventEmitter {
                 .then(res => res.json())
                 .then(json => {
                     if (this.verbose) {
-                        console.log('\n getDevices follows:');
+                        logit('\n getDevices follows:');
                         console.dir(json, { depth: null });
                     }
                     resolve(json);
@@ -159,7 +190,7 @@ class senseDataGetter extends EventEmitter {
      * @returns {Promise} Promise argument will be a JSON object with call results
      */
     getDeviceDetails(deviceID = 'solar') {
-        let uri = apiURL + 'app/monitors/' + this._authObj.monitors[0].id + '/devices/' + deviceID
+        let uri = apiURL + 'app/monitors/' + this._authObj.monitors[0].id + '/devices/' + deviceID;
         return new Promise((resolve, reject) => {
             let callObj = {
                 method: 'GET',
@@ -172,7 +203,7 @@ class senseDataGetter extends EventEmitter {
                 .then(res => res.json())
                 .then(json => {
                     if (this.verbose) {
-                        console.log('\n getDevices follows:');
+                        logit('\n getDevices follows:');
                         console.dir(json, { depth: null });
                     }
                     resolve(json);
@@ -190,7 +221,7 @@ class senseDataGetter extends EventEmitter {
      * @returns {Promise} Promise argument will be a JSON object with call results
      */
     getTimeline() {
-        let uri = apiURL + 'users/' + this._authObj.user_id + '/timeline'
+        let uri = apiURL + 'users/' + this._authObj.user_id + '/timeline';
         return new Promise((resolve, reject) => {
             let callObj = {
                 method: 'GET',
@@ -203,7 +234,7 @@ class senseDataGetter extends EventEmitter {
                 .then(res => res.json())
                 .then(json => {
                     if (this.verbose) {
-                        console.log('\n getTimeline follows:');
+                        logit('\n getTimeline follows:');
                         console.dir(json, { depth: null });
                     }
                     resolve(json);
@@ -221,7 +252,7 @@ class senseDataGetter extends EventEmitter {
      * @returns {Promise} Promise argument will be a JSON object with call results
      */
     getMonitorStatus() {
-        let uri = apiURL + 'app/monitors/' + this._authObj.monitors[0].id + '/status'
+        let uri = apiURL + 'app/monitors/' + this._authObj.monitors[0].id + '/status';
         return new Promise((resolve, reject) => {
             let callObj = {
                 method: 'GET',
@@ -234,7 +265,7 @@ class senseDataGetter extends EventEmitter {
                 .then(res => res.json())
                 .then(json => {
                     if (this.verbose) {
-                        console.log('\n getMonitorStatus follows:');
+                        logit('\n getMonitorStatus follows:');
                         console.dir(json, { depth: null });
                     }
                     resolve(json);
@@ -252,7 +283,7 @@ class senseDataGetter extends EventEmitter {
                 method: 'POST',
                 body: 'email=' + this._userName + '&password=' + this._userPass,
                 headers: { "Content-Type": "application/x-www-form-urlencoded" }
-            }
+            };
             fetch(apiURL + 'authenticate', callObj)
                 .then(res => res.json())
                 .then(json => {
@@ -264,6 +295,10 @@ class senseDataGetter extends EventEmitter {
                 })
         });
     };
+};
+
+function logit(txt = '') {
+    console.debug(logPrefix + txt);
 };
 
 module.exports = senseDataGetter;

@@ -20,6 +20,7 @@ class senseDataGetter extends EventEmitter {
      * Then listen for the authenticated event before calling any class methods.
      * emits:
      *   emit('authenticated')
+     *   emit('notAuthenticated')
      *   emit('wsStatus', 'open')
      *   emit('wsStatus', 'close')
      *   emit('wsStatus', 'error', err)
@@ -52,7 +53,7 @@ class senseDataGetter extends EventEmitter {
                 this._authObj = authObj;
                 if (!this._authObj.authorized) {
                     console.error('Error user not authenticated!');
-                    throw Error('User not authenticated!');
+                    this.emit('notAuthenticated');
                 } else {
                     if (this.verbose) logit('User is Authorized. Emitting authenticated.');
                     this.emit('authenticated');
@@ -70,7 +71,7 @@ class senseDataGetter extends EventEmitter {
         if (webSoc != null) {
             webSoc.terminate();
         } else {
-            logit("WebSocket not open! Can't close!");
+            if (this.verbose) logit("WebSocket not open! Can't close!");
         };
     };
 

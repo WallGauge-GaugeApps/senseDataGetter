@@ -6,46 +6,21 @@ var solarPowered = null;
 var minCount = 0;
 const reconnectInterval = 60;    // in minutes  60
 const getTrendInterval = 10;     // in minutes  10
+var nextReconnectInterval = reconnectInterval;
+var nextGetTrendInterval = getTrendInterval;
+var mainPoller = null;
 
 const sense = new Sense(actObj.email, actObj.password, false);
 
-var nextReconnectInterval = reconnectInterval;
-var nextGetTrendInterval = getTrendInterval;
-
-setInterval(() => {
-    minCount++;
-    if (nextGetTrendInterval == minCount) {
-        nextGetTrendInterval += reconnectInterval;
-        getTrend();
-    } else if (nextReconnectInterval == minCount) {
-        nextReconnectInterval += getTrendInterval;
-        reconnectToSense();
-    } else {
-        sense.openWebSocket();
-    }
-}, 60000);
-
-function reconnectToSense() {
-    console.log('-------- Reconnecting to sense.com ---------');
-    sense.closeWebSoc();
-    sense.authenticate();
-    sense.openWebSocket();
-};
-
-function getTrend() {
-    sense.getTrends('week')
-        .then((data) => {
-            solarPowered = data.solar_powered
-            console.log('Update. This week ' + solarPowered + '% of the power was from renewable energy.');
-        })
-        .catch((err) => {
-            console.error('Error trying to getTrends from sense.com', err)
-        });
-};
+sense.on('notAuthenticated', () => {
+    console.log('Please check your sense login ID and Password.')
+    clearInterval(mainPoller);
+});
 
 sense.on('authenticated', () => {
-    console.log('We are logged in and authenticated!')
-    console.log('Reading Trends...');
+    console.log('Authenticated!')
+    if (firstRun) startPoller();
+    console.log('Getting trend data...');
     sense.getTrends('week')
         .then((data) => {
             solarPowered = data.solar_powered
@@ -68,3 +43,38 @@ sense.on('power', () => {
         ' | ' + solarPowered + '% of the this week\'s power was from renewable energy.');
     sense.closeWebSoc();
 });
+
+function startPoller() {
+    console.log('Starting endless poller.');
+    console.log('Poller will open and close web socket every 1 minute, read trend data every ' + getTrendInterval + ' minutes, and re-authenticate every ' + reconnectInterval + ' minutes.');
+    mainPoller = setInterval(() => {
+        minCount++;
+        if (nextGetTrendInterval == minCount) {
+            nextGetTrendInterval += reconnectInterval;
+            getTrend();
+        } else if (nextReconnectInterval == minCount) {
+            nextReconnectInterval += getTrendInterval;
+            reconnectToSense();
+        } else {
+            sense.openWebSocket();
+        }
+    }, 60000);
+};
+
+function reconnectToSense() {
+    console.log('-------- Reconnecting to sense.com ---------');
+    sense.closeWebSoc();
+    sense.authenticate();
+    sense.openWebSocket();
+};
+
+function getTrend() {
+    sense.getTrends('week')
+        .then((data) => {
+            solarPowered = data.solar_powered
+            console.log('Update. This week ' + solarPowered + '% of the power was from renewable energy.');
+        })
+        .catch((err) => {
+            console.error('Error trying to getTrends from sense.com', err)
+        });
+};

@@ -10,7 +10,8 @@ var webSoc = null;
 var powerObj = {
     solarWatts: null,
     gridWatts: 0,
-    netWatts: 0
+    netWatts: 0,
+    alwaysOn: 0,
 };
 
 class senseDataGetter extends EventEmitter {
@@ -105,14 +106,25 @@ class senseDataGetter extends EventEmitter {
             let dObj = {};
             dObj = JSON.parse(data);
             if (this.listenerCount('wsData') == 0 && this.verbose) {
-                logit('\n_______________________________________________________________________________________________________\n');
+                logit('\n____ wsData follows ___________________________________________________________________________________________________\n');
                 console.dir(dObj, { depth: null });
+            };
+
+            let devicList = dObj.payload.devices;
+            let alwaysOn = 0;
+            if(Array.isArray(devicList)){
+                devicList.forEach((item, index)=>{
+                    if(item.id == 'always_on'){
+                        alwaysOn = item.w
+                    };
+                });
             };
 
             if (dObj.payload.grid_w != undefined) {
                 this.power.solarWatts = dObj.payload.d_solar_w;
                 this.power.gridWatts = dObj.payload.grid_w;
                 this.power.netWatts = dObj.payload.d_w;
+                this.power.alwaysOn = alwaysOn;
                 this.emit('power');
             };
             this.emit('wsData', dObj);

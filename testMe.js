@@ -40,6 +40,7 @@ sense.on('power', () => {
         ' | Home Load:' + sense.power.netWatts +
         ', Solar In: ' + sense.power.solarWatts +
         ', Grid In: ' + sense.power.gridWatts +
+        ', Always On: ' + sense.power.alwaysOn +
         ' | ' + solarPowered + '% of the this week\'s power was from renewable energy.');
     sense.closeWebSoc();
 });

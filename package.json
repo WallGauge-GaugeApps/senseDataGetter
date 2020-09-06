@@ -1,6 +1,6 @@
 {
   "name": "sense-data-getter",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "gets data from sense home monitor",
   "main": "senseDataGetter.js",
   "scripts": {

@@ -116,6 +116,7 @@ class senseDataGetter extends EventEmitter {
                 devicList.forEach((item, index)=>{
                     if(item.id == 'always_on'){
                         alwaysOn = item.w
+                        logit('Always on just set to ' + alwaysOn);
                     };
                 });
             };

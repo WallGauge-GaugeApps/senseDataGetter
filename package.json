@@ -1,6 +1,6 @@
 {
   "name": "sense-data-getter",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "gets data from sense home monitor",
   "main": "senseDataGetter.js",
   "scripts": {
@@ -15,6 +15,6 @@
   "homepage": "https://WallGauge.com",
   "dependencies": {
     "node-fetch": "^2.6.1",
-    "ws": "^5.2.0"
+    "ws": "^7.4.6"
   }
 }
